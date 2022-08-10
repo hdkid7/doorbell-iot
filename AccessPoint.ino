@@ -14,9 +14,9 @@ int redLed =  3;
 int status = WL_IDLE_STATUS;
 WiFiServer server(80);
 
-struct WIfiCreds {
-  char pass[64];
-  char ssid[64];
+struct WifiCreds {
+  char* pass;
+  char* ssid;
 };
 
 
@@ -92,6 +92,7 @@ void loop() {
   
   WiFiClient client = server.available();   // listen for incoming clients
 
+
   if (client) {                             // if you get a client,
     Serial.println("new client");           // print a message out the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
@@ -103,15 +104,12 @@ void loop() {
          currentLine.trim();
          
         if(c == '\n' && currentLine.length() == 0){
-          String postParams = "";
-         while(client.available()){
-          char b = client.read();
-          postParams += b;
-              
-         }
+         WifiCreds cred = getWifiCreds(client);
+         // connect to wifi next
+         //make a seperate connet to wifi module
+         connectToWifi(cred);
 
-         Serial.println(postParams);
-
+     
         }
 
           currentLine += c;
@@ -172,6 +170,53 @@ void loop() {
   }
 }
 
+
+WifiCreds getWifiCreds(WiFiClient client){
+     char postParams[55];
+     char pass[25];
+     char ssid[25];
+
+     char equal1[20] = "";
+     char equal2[20] = "";
+     char * p;
+     
+     while(client.available()){
+            char b = client.read();
+            strncat(postParams, &b, 1);
+     }
+
+     p = strtok(postParams, "&");
+
+     if (p != NULL){
+      strcpy(equal1,p);
+
+      p = strtok(NULL, "&");
+
+      if(p != NULL){
+        strcpy(equal2,p);
+      }
+     }
+
+     p = strtok(equal1,"=");
+
+     if(p != NULL){
+            p = strtok(NULL, "=");
+
+      strcpy(ssid,p);
+     }
+
+     p = strtok(equal2, "=");
+
+     if(p != NULL){
+            p = strtok(NULL, "=");
+
+      strcpy(pass,p);
+     }
+
+     struct WifiCreds cred = {ssid, pass};
+   
+     return cred;
+}
 
 
 void printWiFiStatus() {
